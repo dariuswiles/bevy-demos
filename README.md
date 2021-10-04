@@ -13,6 +13,6 @@ cargo run --bin bevy_book_2_2
  
 ## License
 
-This repository is released under The Unlicense_. See [LICENSE](LICENSE) for the license text, or https://unlicense.org/ for more details.
+This repository is released under The Unlicense. See [LICENSE](LICENSE) for the license text, or https://unlicense.org/ for more details.
 
-Files with the prefix *bevy_book* contain code from the Bevy Book website, which is released under the permissive MIT license. See the website's [GitHub]([https://github.com/bevyengine/bevy-website]) page for the license.
+Files with the prefix *bevy_book* contain code from the Bevy Book website, which is released under the permissive MIT license. See the website's [GitHub](https://github.com/bevyengine/bevy-website) page for the license.
