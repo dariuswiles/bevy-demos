@@ -1,7 +1,5 @@
-/// Load a sprite sheet (which Bevy prefers to call a texture atlas) from a file, and display its
-/// individual sprites. Create a `GameData` resource to hold game state. Monitor for keyboard
-/// input for a number key between 1 and 7 (inclusive) being pressed and output the current
-/// board state on each press.
+/// Fourline - win by making a line vertically, horizontally or diagonally before your computer
+/// opponent. The computer randomly picks a column for each move, so shouldn't be hard to beat!
 
 use bevy::prelude::*;
 use std::fmt;
@@ -12,34 +10,34 @@ const SPRITE_FILENAME: &str = "sprites/fourline.png";
 const SPRITE_WIDTH: usize = 80;
 const SPRITE_HEIGHT: usize = 80;
 
-type Cell = Option<PlayerColor>;
+type Cell = Option<Player>;
 
 
-/// Used purely to label the camera so it is easier to find when converting the cursor position
+/// Used to label the primary camera so it is easier to find when converting the cursor position
 /// between coordinate systems.
 struct PrimaryCamera;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum PlayerColor {
-    Blue,
-    Red,
+enum Player {
+    Human,
+    Computer,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum GameState {
-    HumanToMove,
-    ComputerToMove,
-    GameWon,
+    HumanMove,
+    ComputerMove,
+    HumanWon,
+    ComputerWon,
     GameDrawn,
 }
 
 
-/// The GameData. `cells` is an array where the index of the bottom-left cell is 0, the cell to
+/// Game data. `cells` is an array where the index of the bottom-left cell is 0, the cell to
 /// its right is 1, and the cell above is NUM_COLUMNS. The last cell is the top-right cell, which
 /// has an index of NUM_ROWS * NUM_COLUMNS - 1.
 struct GameData {
     cells: [Cell; NUM_COLUMNS * NUM_ROWS],
-    next_player_color: PlayerColor,
     texture_atlas: Handle<TextureAtlas>,
 }
 
@@ -52,10 +50,10 @@ impl fmt::Debug for GameData {
 
                 if let Some(token) = cell {
                     match token {
-                        PlayerColor::Blue => {
+                        Player::Human => {
                             output.push_str("B ");
                         }
-                        PlayerColor::Red => {
+                        Player::Computer => {
                             output.push_str("R ");
                         }
                     }
@@ -75,18 +73,15 @@ impl GameData {
     ) -> Self {
         Self {
             cells: [None; NUM_COLUMNS * NUM_ROWS],
-            next_player_color: PlayerColor::Blue,
             texture_atlas,
         }
     }
 
     /// Add a new piece for the next player in the lowest empty cell in `col`. On success, return
     /// the row index of the new piece with an `Ok`, or `Err` if `col` is full.
-    fn make_move(&mut self, col: usize) -> Result<usize, ()> {
-        assert!(col < NUM_COLUMNS);
-
-        if let Some(vacant_row) = self.lowest_vacant_row(col) {
-            self.cells[NUM_COLUMNS * vacant_row + col] = Some(self.next_player_color);
+    fn make_move(&mut self, column: usize, color: Player) -> Result<usize, ()> {
+        if let Some(vacant_row) = self.lowest_vacant_row(column) {
+            self.cells[NUM_COLUMNS * vacant_row + column] = Some(color);
             Result::Ok(vacant_row)
         } else {
             Result::Err(())
@@ -96,23 +91,16 @@ impl GameData {
     /// Return the index of the row nearest the bottom of the game board that has a vacant cell in
     /// the given `col`. Return `None` if the column is full.
     fn lowest_vacant_row(&self, col: usize) -> Option<usize> {
-        assert!(col < NUM_COLUMNS);
-
         for row in 0..NUM_ROWS {
             if self.cells[row * NUM_COLUMNS + col] == None {
                 return Some(row);
             }
         }
-
         None
     }
 
     /// Return `true` if the piece at the cell defined by `column` and `row` is part of a line of 4
     /// pieces for the same player.
-    ///
-    /// # Panics
-    ///
-    /// Panics if either `col` or `row` are not a valid column or row reference respectively.
     //
     // The outer 'for' loop uses an array of (column displacement, row displacement) pairs. These
     // are used in the inner loop to modify the `col` and `row` passed as parameters to examine the
@@ -122,9 +110,6 @@ impl GameData {
     // are discarded before being used to perform lookups. They are signed so that they can extend
     // in the negative direction.
     fn is_winning_move(&self, col: usize, row: usize) -> bool {
-        assert!(col < NUM_COLUMNS);
-        assert!(row < NUM_ROWS);
-
         let played_piece = self.cells[row * NUM_COLUMNS + col];
         if played_piece == None { return false; }
 
@@ -147,12 +132,10 @@ impl GameData {
                 } else {
                     line_length = 0;
                 }
-//                 println!("\ti = {}\t(c = {}, r = {}, line_length = {})", i, c, r, line_length);
             }
         }
         false
     }
-
 
     /// Returns `true` if every cell in the top row is full, i.e., no further moves are possible.
     fn is_board_full(&self) -> bool {
@@ -164,7 +147,6 @@ impl GameData {
         true
     }
 }
-
 
 
 fn setup(
@@ -219,23 +201,8 @@ fn create_board(
 }
 
 
-fn make_move(column: usize, gd: &mut ResMut<GameData>) -> Result<usize, ()> {
-//     println!("Next move being made in column {:#?}", column);
-//     println!("Game board before\n{:#?}", **gd);
-
-    let move_result = gd.make_move(column);
-    if let Err(()) = move_result {
-        println!("make_move failed because column {} is full", column);
-//     } else {
-//         println!("Game board after\n{:#?}", **gd);
-    }
-    move_result
-}
-
-
-
 /// Wait for the user to click on a column of the board and attempt to play a piece there.
-fn main_loop(
+fn human_move(
     mut mouse_button_input: ResMut<Input<MouseButton>>,
     windows: Res<Windows>,
     camera: Query<&Transform, With<PrimaryCamera>>,
@@ -247,80 +214,54 @@ fn main_loop(
         let primary_window = windows.get_primary().unwrap();
 
         if let Some(pos) = primary_window.cursor_position() {
-//             println!("User clicked at raw position {}, {}", pos.x, pos.y);
-
             if let Ok(selected_column) = convert_mouse_position_to_column_id(
                 &primary_window,
                 &camera.single().unwrap(),
                 pos,
             ) {
-//                 println!("\twhich translates to column {}", selected_column);
-
-                if let Result::Ok(r) = make_move(selected_column, &mut gd) {
-//                     println!("Move was successfully made in row {}", r);
-
-                    add_piece_to_board(&gd, &mut commands, selected_column, r);
-
-                    if gd.is_winning_move(selected_column, r) {
-                        if gd.cells[r * NUM_COLUMNS + selected_column].unwrap() == PlayerColor::Blue {
-                            println!("Blue wins!");
-                        } else {
-                            println!("Red wins!");
-                        }
-
-                        if state.current() != &GameState::GameWon {
-                            if let Err(_) = state.set(GameState::GameWon) {
-                                println!("Failed to change to 'GameWon' state");
-                            }
-                            return;
-                        }
-                    }
-
-                    if gd.is_board_full() {
-                        println!("Game drawn");
-                        if let Err(_) = state.set(GameState::GameDrawn) {
-                            println!("Failed to change to 'GameDrawn' state");
-                        }
-                        return;
-                    }
-
-
-                    if gd.next_player_color == PlayerColor::Blue {
-                        gd.next_player_color = PlayerColor::Red;
-                        println!("Switching to Red player");
-                        if let Err(_) = state.set(GameState::ComputerToMove) {
-                            println!("Failed to change to 'ComputerToMove' state");
-                        }
-                    } else {
-                        gd.next_player_color = PlayerColor::Blue;
-                        println!("Switching to Blue player");
-                        if let Err(_) = state.set(GameState::HumanToMove) {
-                            println!("Failed to change to 'HumanToMove' state");
-                        }
+                if let Result::Ok(r) = gd.make_move(selected_column, player_color_from_state(&state)) {
+                    add_piece_to_board(&gd, &mut commands, selected_column, r, player_color_from_state(&state));
+                    if !is_game_over(&mut gd, &mut state, selected_column, r) {
+                        state.set(GameState::ComputerMove).unwrap();
                     }
                 }
             }
         }
-
         mouse_button_input.reset(MouseButton::Left);
     }
 }
 
 
+fn human_won(commands: Commands, asset_server: Res<AssetServer>) {
+    display_text(commands, asset_server, "You win!");
+}
+
+fn computer_won(commands: Commands, asset_server: Res<AssetServer>) {
+    display_text(commands, asset_server, "Computer wins");
+}
+
+fn game_drawn(commands: Commands, asset_server: Res<AssetServer>) {
+    display_text(commands, asset_server, "Game drawn");
+}
+
 
 /// Adds a piece to the graphical game board at coordinations `col` and `row`, and using the color
 /// of the current player, as defined in `gd`.
-fn add_piece_to_board(gd: &GameData, commands: &mut Commands, col: usize, row: usize) {
+fn add_piece_to_board(
+    gd: &GameData,
+    commands: &mut Commands,
+    column: usize,
+    row: usize,
+    player_color: Player,
+) {
     let x_offset = (NUM_COLUMNS - 1) as f32 / 2.0;
     let y_offset = (NUM_ROWS - 1) as f32 / 2.0;
 
-    let x = (col as f32 - x_offset) * SPRITE_WIDTH as f32;
+    let x = (column as f32 - x_offset) * SPRITE_WIDTH as f32;
     let y = (row as f32 - y_offset) * SPRITE_HEIGHT as f32;
-    let color;
 
-    if gd.next_player_color == PlayerColor::Blue {
-        color = Color::BLUE;
-    } else {
+    let mut color = Color::BLUE;
+    if player_color == Player::Computer {
         color = Color::RED;
     }
 
@@ -360,56 +301,100 @@ fn convert_mouse_position_to_column_id(
 }
 
 
-/// Wait for the user to click on a column of the board and attempt to play a piece there.
+/// Make a move in a random column.
 fn computer_move(
     mut commands: Commands,
     mut gd: ResMut<GameData>,
     mut state: ResMut<State<GameState>>,
 ) {
-    let selected_column = fastrand::u8(0..7) as usize;
+    loop {
+        let selected_column = fastrand::u8(0..NUM_COLUMNS as u8) as usize;
 
-    if let Result::Ok(r) = make_move(selected_column, &mut gd) {
-                    println!("Move was successfully made in row {}", r);
-
-        add_piece_to_board(&gd, &mut commands, selected_column, r);
-
-        if gd.is_winning_move(selected_column, r) {
-            if gd.cells[r * NUM_COLUMNS + selected_column].unwrap() == PlayerColor::Blue {
-                println!("Blue wins!");
-            } else {
-                println!("Red wins!");
+        if let Result::Ok(r) = gd.make_move(selected_column, player_color_from_state(&state)) {
+            add_piece_to_board(&gd, &mut commands, selected_column, r,
+                player_color_from_state(&state)
+            );
+            if !is_game_over(&mut gd, &mut state, selected_column, r) {
+                state.set(GameState::HumanMove).unwrap();
             }
-
-            if state.current() != &GameState::GameWon {
-                if let Err(_) = state.set(GameState::GameWon) {
-                    println!("Failed to change to 'GameWon' state");
-                }
-                return;
-            }
+            break;
         }
+    }
+}
 
-        if gd.is_board_full() {
-            println!("Game drawn");
-            if let Err(_) = state.set(GameState::GameDrawn) {
-                println!("Failed to change to 'GameDrawn' state");
-            }
-            return;
-        }
 
-        if gd.next_player_color == PlayerColor::Blue {
-            gd.next_player_color = PlayerColor::Red;
-            println!("Switching to Red player");
-            if let Err(_) = state.set(GameState::ComputerToMove) {
-                println!("Failed to change to 'ComputerToMove' state");
+/// Determines if the game has been won by the move at `col` and `row`, or if the game is drawn
+/// because the board is full. If so, sets the `state` to indicate which player won or that the
+/// game is drawn and returns `true`. If no-one has won and the game is not drawn, returns `false`.
+fn is_game_over(
+    gd: &mut ResMut<GameData>,
+    state: &mut ResMut<State<GameState>>,
+    col: usize,
+    row: usize
+) -> bool {
+    if gd.is_winning_move(col, row) {
+        if gd.cells[row * NUM_COLUMNS + col].unwrap() == Player::Human {
+            if state.current() != &GameState::HumanWon {
+                state.set(GameState::HumanWon).unwrap();
+                return true;
             }
         } else {
-            gd.next_player_color = PlayerColor::Blue;
-            println!("Switching to Blue player");
-            if let Err(_) = state.set(GameState::HumanToMove) {
-                println!("Failed to change to 'HumanToMove' state");
+            if state.current() != &GameState::ComputerWon {
+                state.set(GameState::ComputerWon).unwrap();
+                return true;
             }
         }
     }
+    if gd.is_board_full() {
+        state.set(GameState::GameDrawn).unwrap();
+        return true;
+    }
+    false
+}
+
+
+/// Returns the Player associated with the given `State`.
+///
+/// # Panics
+///
+/// Panics if `State` is not `HumanMove` or `ComputerMove`.
+fn player_color_from_state(state: &State<GameState>) -> Player {
+    match state.current() {
+        GameState::HumanMove => { Player::Human },
+        GameState::ComputerMove => { Player::Computer },
+        _ => { panic!("Current state is not associated with a player color"); }
+    }
+}
+
+
+/// Display the given text near the top-left of the window.
+fn display_text(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    s: &str,
+) {
+    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn_bundle(TextBundle {
+        text: Text::with_section(
+            s,
+            TextStyle {
+                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font_size: 80.0,
+                color: Color::rgb(0.9, 0.9, 0.9),
+            },
+            Default::default()
+        ),
+        style: Style {
+            position_type: PositionType::Absolute,
+            position: Rect {
+                top: Val::Px(20.0),
+                left: Val::Px(40.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        ..Default::default()
+    });
 }
 
 
@@ -417,71 +402,21 @@ fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup.system())
-        .add_state(GameState::HumanToMove)
-        .add_system_set(SystemSet::on_update(GameState::HumanToMove).with_system(main_loop.system()))
-        .add_system_set(SystemSet::on_update(GameState::ComputerToMove).with_system(computer_move.system()))
+        .add_state(GameState::HumanMove)
+        .add_system_set(SystemSet::on_update(GameState::HumanMove)
+            .with_system(human_move.system())
+        )
+        .add_system_set(SystemSet::on_enter(GameState::ComputerMove)
+            .with_system(computer_move.system())
+        )
+        .add_system_set(SystemSet::on_enter(GameState::HumanWon)
+            .with_system(human_won.system())
+        )
+        .add_system_set(SystemSet::on_enter(GameState::ComputerWon)
+            .with_system(computer_won.system())
+        )
+        .add_system_set(SystemSet::on_enter(GameState::GameDrawn)
+            .with_system(game_drawn.system())
+        )
         .run();
-}
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn lowest_vacant_row_in_empty_grid() {
-        let mut gd = GameData::default();
-
-        assert_eq!(Some(0), gd.lowest_vacant_row(0));
-        assert_eq!(Some(0), gd.lowest_vacant_row(4));
-        assert_eq!(Some(0), gd.lowest_vacant_row(NUM_COLUMNS - 1));
-    }
-
-    #[test]
-    fn lowest_vacant_row_in_partial_column() {
-        let mut gd = GameData::default();
-
-        gd.next_player_color = PlayerColor::Blue;
-        gd.make_move(2);
-        assert_eq!(Some(1), gd.lowest_vacant_row(2));
-
-        gd.next_player_color = PlayerColor::Red;
-        gd.make_move(2);
-        assert_eq!(Some(2), gd.lowest_vacant_row(2));
-    }
-
-    #[test]
-    fn horizontal_winner() {
-        let mut gd = GameData {
-            ..Default::default()
-        };
-        assert_eq!(false, gd.is_winning_move(3, 0));
-
-        gd.cells[2] = Some(PlayerColor::Red);
-        gd.cells[3] = Some(PlayerColor::Red);
-        gd.cells[4] = Some(PlayerColor::Red);
-        gd.cells[5] = Some(PlayerColor::Red);
-        assert_eq!(true, gd.is_winning_move(3, 0));
-
-        gd.cells[4] = Some(PlayerColor::Blue);
-        assert_eq!(false, gd.is_winning_move(3, 0));
-    }
-
-    #[test]
-    fn vertical_winner() {
-
-        let mut gd = GameData {
-            ..Default::default()
-        };
-        assert_eq!(false, gd.is_winning_move(2, 0));
-
-        gd.cells[2] = Some(PlayerColor::Red);
-        gd.cells[NUM_COLUMNS + 2] = Some(PlayerColor::Red);
-        gd.cells[2 * NUM_COLUMNS + 2] = Some(PlayerColor::Red);
-        gd.cells[3 * NUM_COLUMNS + 2] = Some(PlayerColor::Red);
-        assert_eq!(true, gd.is_winning_move(2, 0));
-
-        gd.cells[2 * NUM_COLUMNS + 2] = Some(PlayerColor::Blue);
-        assert_eq!(false, gd.is_winning_move(2, 0));
-    }
 }
