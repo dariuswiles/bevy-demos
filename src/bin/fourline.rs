@@ -4,6 +4,9 @@
 use bevy::prelude::*;
 use std::fmt;
 
+
+const WINDOW_WIDTH: f32 = 700.0;
+const WINDOW_HEIGHT: f32 = 700.0;
 const NUM_COLUMNS: usize = 7;
 const NUM_ROWS: usize = 6;
 const SPRITE_FILENAME: &str = "sprites/fourline.png";
@@ -399,7 +402,15 @@ fn display_text(
 
 
 fn main() {
+    let wd = WindowDescriptor {
+        width: WINDOW_WIDTH,
+        height: WINDOW_HEIGHT,
+        title: String::from("Fourline"),
+        ..Default::default()
+    };
+
     App::build()
+        .insert_resource(wd)
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup.system())
         .add_state(GameState::HumanMove)
