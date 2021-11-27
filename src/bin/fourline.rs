@@ -235,16 +235,28 @@ fn human_move(
 }
 
 
-fn human_won(commands: Commands, asset_server: Res<AssetServer>) {
-    display_text(commands, asset_server, "You win!");
+fn human_won(
+    commands: Commands,
+    asset_server: Res<AssetServer>,
+    materials: ResMut<Assets<ColorMaterial>>
+) {
+    display_text(commands, asset_server, materials, "You win!");
 }
 
-fn computer_won(commands: Commands, asset_server: Res<AssetServer>) {
-    display_text(commands, asset_server, "Computer wins");
+fn computer_won(
+    commands: Commands,
+    asset_server: Res<AssetServer>,
+    materials: ResMut<Assets<ColorMaterial>>
+) {
+    display_text(commands, asset_server, materials, "Computer wins");
 }
 
-fn game_drawn(commands: Commands, asset_server: Res<AssetServer>) {
-    display_text(commands, asset_server, "Game drawn");
+fn game_drawn(
+    commands: Commands,
+    asset_server: Res<AssetServer>,
+    materials: ResMut<Assets<ColorMaterial>>
+) {
+    display_text(commands, asset_server, materials, "Game drawn");
 }
 
 
@@ -374,30 +386,41 @@ fn player_color_from_state(state: &State<GameState>) -> Player {
 fn display_text(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     s: &str,
 ) {
     commands.spawn_bundle(UiCameraBundle::default());
-    commands.spawn_bundle(TextBundle {
-        text: Text::with_section(
-            s,
-            TextStyle {
-                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                font_size: 80.0,
-                color: Color::rgb(0.9, 0.9, 0.9),
-            },
-            Default::default()
-        ),
-        style: Style {
-            position_type: PositionType::Absolute,
-            position: Rect {
-                top: Val::Px(20.0),
-                left: Val::Px(40.0),
+
+    commands
+        .spawn_bundle(NodeBundle {
+            material: materials.add(Color::rgba(0.0, 0.0, 0.0, 0.0).into()),
+            style: Style {
+                justify_content: JustifyContent::Center,
+                margin: Rect {
+                    top: Val::Px(10.0),
+                    bottom: Val::Auto,
+                    left: Val::Auto,
+                    right: Val::Auto,
+                    ..Default::default()
+                },
                 ..Default::default()
             },
             ..Default::default()
-        },
-        ..Default::default()
-    });
+        })
+        .with_children(|parent| {
+            parent.spawn_bundle(TextBundle {
+                text: Text::with_section(
+                    s,
+                    TextStyle {
+                        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                        font_size: 80.0,
+                        color: Color::rgb(0.6, 0.6, 1.0),
+                    },
+                    Default::default()
+                ),
+                ..Default::default()
+            });
+        });
 }
 
 
