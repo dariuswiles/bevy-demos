@@ -243,6 +243,7 @@ fn human_won(
     display_text(commands, asset_server, materials, "You win!");
 }
 
+
 fn computer_won(
     commands: Commands,
     asset_server: Res<AssetServer>,
@@ -250,6 +251,7 @@ fn computer_won(
 ) {
     display_text(commands, asset_server, materials, "Computer wins");
 }
+
 
 fn game_drawn(
     commands: Commands,
@@ -260,7 +262,7 @@ fn game_drawn(
 }
 
 
-/// Adds a piece to the graphical game board at coordinations `col` and `row`, and using the color
+/// Adds a piece to the graphical game board at coordinates `col` and `row`, and using the color
 /// of the current player, as defined in `gd`.
 fn add_piece_to_board(
     gd: &GameData,
@@ -382,7 +384,7 @@ fn player_color_from_state(state: &State<GameState>) -> Player {
 }
 
 
-/// Display the given text near the top-left of the window.
+/// Display the given text at the top-center of the window.
 fn display_text(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
