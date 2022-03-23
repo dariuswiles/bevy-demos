@@ -18,6 +18,7 @@ type Cell = Option<Player>;
 
 /// Used to label the primary camera so it is easier to find when converting the cursor position
 /// between coordinate systems.
+#[derive(Component)]
 struct PrimaryCamera;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -219,7 +220,7 @@ fn human_move(
         if let Some(pos) = primary_window.cursor_position() {
             if let Ok(selected_column) = convert_mouse_position_to_column_id(
                 &primary_window,
-                &camera.single().unwrap(),
+                &camera.single(),
                 pos,
             ) {
                 if let Result::Ok(r) = gd.make_move(selected_column, player_color_from_state(&state)) {
@@ -238,27 +239,27 @@ fn human_move(
 fn human_won(
     commands: Commands,
     asset_server: Res<AssetServer>,
-    materials: ResMut<Assets<ColorMaterial>>
+//     materials: ResMut<Assets<ColorMaterial>>
 ) {
-    display_text(commands, asset_server, materials, "You win!");
+    display_text(commands, asset_server, "You win!");
 }
 
 
 fn computer_won(
     commands: Commands,
     asset_server: Res<AssetServer>,
-    materials: ResMut<Assets<ColorMaterial>>
+//     materials: ResMut<Assets<ColorMaterial>>
 ) {
-    display_text(commands, asset_server, materials, "Computer wins");
+    display_text(commands, asset_server, "Computer wins");
 }
 
 
 fn game_drawn(
     commands: Commands,
     asset_server: Res<AssetServer>,
-    materials: ResMut<Assets<ColorMaterial>>
+//     materials: ResMut<Assets<ColorMaterial>>
 ) {
-    display_text(commands, asset_server, materials, "Game drawn");
+    display_text(commands, asset_server, "Game drawn");
 }
 
 
@@ -388,14 +389,13 @@ fn player_color_from_state(state: &State<GameState>) -> Player {
 fn display_text(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     s: &str,
 ) {
     commands.spawn_bundle(UiCameraBundle::default());
 
     commands
         .spawn_bundle(NodeBundle {
-            material: materials.add(Color::rgba(0.0, 0.0, 0.0, 0.0).into()),
+            color: Color::rgba(0.0, 0.0, 0.0, 0.0).into(),
             style: Style {
                 justify_content: JustifyContent::Center,
                 margin: Rect {
@@ -434,7 +434,7 @@ fn main() {
         ..Default::default()
     };
 
-    App::build()
+    App::new()
         .insert_resource(wd)
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup.system())

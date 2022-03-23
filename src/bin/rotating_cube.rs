@@ -5,6 +5,7 @@
 
 use bevy::prelude::*;
 
+#[derive(Component)]
 struct RotatingEntity; // Component to indicate entity should be rotated
 
 fn setup(
@@ -37,7 +38,7 @@ fn setup(
     });
 
     // Light
-    commands.spawn_bundle(LightBundle {
+    commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(2.0, 5.0, 2.0),
         ..Default::default()
     });
@@ -58,7 +59,7 @@ fn rotate_entities(time: Res<Time>, mut query: Query<&mut Transform, With<Rotati
 
 
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup.system())
         .add_system(rotate_entities.system())

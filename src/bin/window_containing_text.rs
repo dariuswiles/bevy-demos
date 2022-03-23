@@ -39,7 +39,7 @@ fn main() {
         ..Default::default()
     };
 
-    App::build()
+    App::new()
         .insert_resource(wd)
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup.system())

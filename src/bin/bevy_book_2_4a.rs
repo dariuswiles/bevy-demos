@@ -6,8 +6,12 @@
 
 use bevy::prelude::*;
 
+#[derive(Component)]
 struct Person;
+
+#[derive(Component)]
 struct Name(String);
+
 
 fn add_people(mut commands: Commands) {
     commands.spawn().insert(Person).insert(Name("Elaina Proctor".to_string()));
@@ -26,7 +30,7 @@ fn hello_world() {
 }
 
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_startup_system(add_people.system())
         .add_system(hello_world.system())

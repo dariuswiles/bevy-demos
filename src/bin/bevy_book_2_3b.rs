@@ -3,7 +3,10 @@
 
 use bevy::prelude::*;
 
+#[derive(Component)]
 struct Person;
+
+#[derive(Component)]
 struct Name(String);
 
 fn add_people(mut commands: Commands) {
@@ -23,7 +26,7 @@ fn hello_world() {
 }
 
 fn main() {
-    App::build()
+    App::new()
         .add_startup_system(add_people.system())
         .add_system(hello_world.system())
         .add_system(greet_people.system())

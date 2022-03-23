@@ -26,7 +26,7 @@ fn setup(
     });
 
     // Light
-    commands.spawn_bundle(LightBundle {
+    commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(2.0, 5.0, 2.0),
         ..Default::default()
     });
@@ -40,7 +40,7 @@ fn setup(
 }
 
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup.system())
         .run();

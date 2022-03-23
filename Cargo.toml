@@ -5,5 +5,5 @@ authors = ["Darius Wiles <github@dariuswiles.com>"]
 edition = "2021"
 
 [dependencies]
-bevy = "0.5"
+bevy = "0.6"
 fastrand = "1.5"

@@ -6,15 +6,18 @@
 
 use bevy::prelude::*;
 
+#[derive(Component)]
 struct Person;
-struct Name(String);
-struct GreetTimer(Timer);
 
+#[derive(Component)]
+struct Name(String);
+
+struct GreetTimer(Timer);
 
 pub struct HelloPlugin;
 
 impl Plugin for HelloPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.insert_resource(GreetTimer(Timer::from_seconds(2.0, true)))
             .add_startup_system(add_people.system())
             .add_system(greet_people.system());
@@ -38,7 +41,7 @@ fn greet_people(
 }
 
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(HelloPlugin)
         .run();

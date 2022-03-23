@@ -3,5 +3,5 @@
 use bevy::prelude::*;
 
 fn main() {
-    App::build().run();
+    App::new().run();
 }

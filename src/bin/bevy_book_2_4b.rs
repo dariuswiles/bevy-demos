@@ -7,13 +7,16 @@
 
 use bevy::prelude::*;
 
+#[derive(Component)]
 struct Person;
+
+#[derive(Component)]
 struct Name(String);
 
 pub struct HelloPlugin;
 
 impl Plugin for HelloPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_startup_system(add_people.system())
             .add_system(hello_world.system())
             .add_system(greet_people.system());
@@ -37,7 +40,7 @@ fn hello_world() {
 }
 
 fn main() {
-    App::build()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(HelloPlugin)
         .run();

@@ -8,7 +8,7 @@ fn hello_world() {
 }
 
 fn main() {
-    App::build()
+    App::new()
         .add_system(hello_world.system())
         .run();
 }
