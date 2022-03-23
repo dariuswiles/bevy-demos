@@ -2,7 +2,7 @@
 name = "bevy-demos"
 version = "0.1.0"
 authors = ["Darius Wiles <github@dariuswiles.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 bevy = "0.5"
