@@ -9,6 +9,6 @@ fn hello_world() {
 
 fn main() {
     App::new()
-        .add_system(hello_world.system())
+        .add_system(hello_world)
         .run();
 }
