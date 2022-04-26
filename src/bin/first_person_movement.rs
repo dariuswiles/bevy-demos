@@ -1,14 +1,19 @@
 /// Create a square to act as the ground and a few trees, then move the camera in response to mouse
 /// input and key presses.
 
+use bevy::core::FixedTimestep;
 use bevy::input::mouse::MouseMotion;
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, Mesh};
 use bevy::render::render_resource::PrimitiveTopology;
 
-const SPEED_MOVE: f32 = 0.15;
-// const SPEED_TURN: f32 = 0.05;
+// Time between each physics step.
+const TIME_STEP: f32 = 1.0 / 60.0;
+
+// Player movement is per TIME_STEP, so must be changed if TIME_STEP is changed.
+const MOVE_PER_TIME_STEP: f32 = 0.15;
+
 const MOUSE_SENSITIVITY: f32 = 500.;
 
 
@@ -261,33 +266,33 @@ fn movement_system(
     let mut movement = Vec3::ZERO;
 
     if key.pressed(KeyCode::A) {
-        movement.x -= SPEED_MOVE;
+        movement.x -= 1.;
     }
 
     if key.pressed(KeyCode::E) {
-        movement.x += SPEED_MOVE;
+        movement.x += 1.;
     }
 
     if key.pressed(KeyCode::Comma) {
-        movement.z -= SPEED_MOVE;
+        movement.z -= 1.;
     }
 
     if key.pressed(KeyCode::LShift) {
-        movement.y += SPEED_MOVE;
+        movement.y += 1.;
     }
 
     if key.pressed(KeyCode::J) {
-        movement.y -= SPEED_MOVE;
+        movement.y -= 1.;
     }
 
     if key.pressed(KeyCode::O) {
-        movement.z += SPEED_MOVE;
+        movement.z += 1.;
     }
 
     let adjusted_movement = transform.rotation * movement;
-    transform.translation.x += adjusted_movement.x;
-    transform.translation.z += adjusted_movement.z;
-    transform.translation.y += adjusted_movement.y;
+    transform.translation.x += adjusted_movement.x * MOVE_PER_TIME_STEP;
+    transform.translation.z += adjusted_movement.z * MOVE_PER_TIME_STEP;
+    transform.translation.y += adjusted_movement.y * MOVE_PER_TIME_STEP;
 
     for event in motion_evr.iter() {
         camera_orientation.x -= event.delta.x / MOUSE_SENSITIVITY;
@@ -295,15 +300,6 @@ fn movement_system(
     }
 
     transform.rotation = camera_orientation.into_quat().normalize();
-
-
-
-//
-//     let translation = &mut transform.translation;
-//     // move the paddle horizontally
-//     translation.x += direction * paddle.speed * TIME_STEP;
-//     // bound the paddle within the walls
-//     translation.x = translation.x.min(380.0).max(-380.0);
 }
 
 fn main() {
@@ -311,6 +307,10 @@ fn main() {
         .insert_resource(CameraOrientation::default())
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
-        .add_system(movement_system)
+        .add_system_set(
+            SystemSet::new()
+                .with_system(movement_system)
+                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+        )
         .run();
 }
