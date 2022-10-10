@@ -1,6 +1,6 @@
 # Examples and Demos for the Bevy Game Engine
 
-This repository contains some simple Rust code to experiment with the [Bevy Game Engine](https://github.com/bevyengine/bevy). Files with the prefix *bevy_book* are examples from [The Bevy Book](https://bevyengine.org/learn/book/introduction/) website.
+This repository contains some simple Rust code to experiment with the [Bevy Game Engine](https://github.com/bevyengine/bevy). Files with the prefix *bevy_book* are examples from an older version of [The Bevy Book](https://bevyengine.org/learn/book/introduction/) website.
 
 You can run the code by downloading the repository to your machine and choosing the file to build and run, e.g.,
 
