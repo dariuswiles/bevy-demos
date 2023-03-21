@@ -5,5 +5,13 @@ authors = ["Darius Wiles <github@dariuswiles.com>"]
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.7", features = ["dynamic"] }
+bevy = { version = "0.9", features = ["dynamic"] }
 fastrand = "1.8"
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for Bevy and other dependencies, but not for my code
+[profile.dev.package."*"]
+opt-level = 3

@@ -6,7 +6,7 @@ fn setup(
     mut commands: Commands,
 ) {
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(40.0, 60.0)),
                 color: Color::rgb(1.0, 0.2, 0.2).into(),
@@ -17,7 +17,7 @@ fn setup(
         });
 
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(Vec2::new(40.0, 60.0)),
                 color: Color::rgb(0.2, 1.0, 0.2).into(),
@@ -28,7 +28,7 @@ fn setup(
         });
 
     // 2D camera
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn main() {

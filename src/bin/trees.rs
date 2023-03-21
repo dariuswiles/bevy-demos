@@ -33,13 +33,13 @@ fn setup(
 
 
     // Light
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn(PointLightBundle {
         transform: Transform::from_xyz(2., 5., 2.),
         ..Default::default()
     });
 
     // Camera
-    commands.spawn_bundle(PerspectiveCameraBundle {
+    commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(0., 1.5, 0.),
         ..Default::default()
     });
@@ -63,7 +63,7 @@ fn create_tree(
     location: Vec3,
 ) {
     // Create a mesh for the tree trunk
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Box::new(trunk_width, trunk_height, trunk_width))),
         material: material_handle_trunk.clone(),
         transform: Transform::from_translation(location + Vec3::new(0., trunk_height / 2.0, 0.)),
@@ -71,7 +71,7 @@ fn create_tree(
     });
 
     // Create a mesh for the tree top
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(Pyramid::new(8, crown_width, crown_height))),
         material: material_handle_crown.clone(),
         transform: Transform::from_translation(location + Vec3::new(0., trunk_height, 0.)),

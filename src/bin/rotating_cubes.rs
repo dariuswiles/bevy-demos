@@ -26,7 +26,7 @@ fn setup(
 
     for location in cube_locations.iter() {
         commands
-            .spawn_bundle(PbrBundle {
+            .spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Cube::new(1.0))),
                 material: material_handle.clone(),
                 transform: Transform::from_translation(*location),
@@ -36,13 +36,13 @@ fn setup(
     }
 
     // Light
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn(PointLightBundle {
         transform: Transform::from_xyz(2.0, 5.0, 2.0),
         ..Default::default()
     });
 
     // Camera
-    commands.spawn_bundle(PerspectiveCameraBundle {
+    commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(0.0, 1.0, 0.0),
         ..Default::default()
     });
@@ -51,7 +51,7 @@ fn setup(
 
 fn rotate_entities(time: Res<Time>, mut query: Query<&mut Transform, With<RotatingEntity>>) {
     for mut transform in query.iter_mut() {
-        transform.rotation = Quat::from_rotation_y(time.seconds_since_startup() as f32 / 2.0);
+        transform.rotation = Quat::from_rotation_y(time.elapsed_seconds() as f32 / 2.0);
     }
 }
 

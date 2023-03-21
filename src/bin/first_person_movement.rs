@@ -1,12 +1,13 @@
 /// Create a square to act as the ground and a few trees, then move the camera in response to mouse
 /// input and key presses.
 
-use bevy::core::FixedTimestep;
 use bevy::input::mouse::MouseMotion;
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, Mesh};
 use bevy::render::render_resource::PrimitiveTopology;
+use bevy::time::FixedTimestep;
+use bevy::window::CursorGrabMode;
 
 // Time between each physics step.
 const TIME_STEP: f32 = 1.0 / 60.0;
@@ -17,6 +18,7 @@ const MOVE_PER_TIME_STEP: f32 = 0.15;
 const MOUSE_SENSITIVITY: f32 = 500.;
 
 
+#[derive(Resource)]
 struct CameraOrientation {
     x: f32,
     y: f32,
@@ -67,7 +69,7 @@ fn setup(
         ..Default::default()
     });
 
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Quad::new(Vec2::new(100., 100.)))),
         material: ground_material_handle.clone(),
         transform: Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
@@ -77,7 +79,7 @@ fn setup(
 
 
     // Point light
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn(PointLightBundle {
         transform: Transform::from_xyz(2., 5., 2.),
         ..Default::default()
     });
@@ -89,7 +91,7 @@ fn setup(
     });
 
     // Camera
-    commands.spawn_bundle(PerspectiveCameraBundle {
+    commands.spawn(Camera3dBundle {
         transform: Transform::from_xyz(0., 1., 0.),
         ..Default::default()
     });
@@ -111,7 +113,7 @@ fn create_tree(
     location: Vec3,
 ) {
     // Create a mesh for the tree trunk
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Box::new(trunk_width, trunk_height, trunk_width))),
         material: material_handle_trunk.clone(),
         transform: Transform::from_translation(location + Vec3::new(0., trunk_height / 2.0, 0.)),
@@ -119,7 +121,7 @@ fn create_tree(
     });
 
     // Create a mesh for the tree top
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(Pyramid::new(8, crown_width, crown_height))),
         material: material_handle_crown.clone(),
         transform: Transform::from_translation(location + Vec3::new(0., trunk_height, 0.)),
@@ -250,12 +252,12 @@ fn movement_system(
     let window = windows.get_primary_mut().unwrap();
 
     if btn.just_pressed(MouseButton::Left) {
-        window.set_cursor_lock_mode(true);
+        window.set_cursor_grab_mode(CursorGrabMode::Confined);
         window.set_cursor_visibility(false);
     }
 
     if key.just_pressed(KeyCode::Escape) {
-        window.set_cursor_lock_mode(false);
+        window.set_cursor_grab_mode(CursorGrabMode::None);
         window.set_cursor_visibility(true);
     }
 

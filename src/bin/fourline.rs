@@ -1,6 +1,10 @@
 /// Fourline - win by making a line vertically, horizontally or diagonally before your computer
 /// opponent. The computer randomly picks a column for each move, so shouldn't be hard to beat!
 
+/// BUG This code is broken as it relies on changing state more than once per frame, which was
+///     deliberately forbidden by a change made in Bevy 0.8, 0.9 or 0.9.1. The rewrite of the
+///     state mechanism in Bevy 0.10 should allow the code to work again. albeit with changes.
+
 use bevy::prelude::*;
 use std::fmt;
 
@@ -40,6 +44,7 @@ enum GameState {
 /// Game data. `cells` is an array where the index of the bottom-left cell is 0, the cell to
 /// its right is 1, and the cell above is NUM_COLUMNS. The last cell is the top-right cell, which
 /// has an index of NUM_ROWS * NUM_COLUMNS - 1.
+#[derive(Resource)]
 struct GameData {
     cells: [Cell; NUM_COLUMNS * NUM_ROWS],
     texture_atlas: Handle<TextureAtlas>,
@@ -159,11 +164,16 @@ fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     // Create a 2D camera
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d()).insert(PrimaryCamera);
+    commands.spawn(Camera2dBundle::default()).insert(PrimaryCamera);
 
     let texture_handle = asset_server.load(SPRITE_FILENAME);
-    let texture_atlas = TextureAtlas::from_grid(texture_handle,
-        Vec2::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32), 2, 1
+    let texture_atlas = TextureAtlas::from_grid(
+        texture_handle,
+        Vec2::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32),
+        2,
+        1,
+        None,
+        None,
     );
     let texture_atlas_handle: Handle<_> = texture_atlases.add(texture_atlas);
 
@@ -194,7 +204,7 @@ fn create_board(
                 1.0
             );
 
-            commands.spawn_bundle(SpriteSheetBundle {
+            commands.spawn(SpriteSheetBundle {
                 sprite: board_sprite.clone(),
                 texture_atlas: texture_atlas_handle.clone(),
                 transform: Transform::from_translation(position),
@@ -226,7 +236,7 @@ fn human_move(
                 if let Result::Ok(r) = gd.make_move(selected_column, player_color_from_state(&state)) {
                     add_piece_to_board(&gd, &mut commands, selected_column, r, player_color_from_state(&state));
                     if !is_game_over(&mut gd, &mut state, selected_column, r) {
-                        state.set(GameState::ComputerMove).unwrap();
+                        state.replace(GameState::ComputerMove).unwrap();
                     }
                 }
             }
@@ -283,7 +293,7 @@ fn add_piece_to_board(
         color = Color::RED;
     }
 
-    commands.spawn_bundle(SpriteSheetBundle {
+    commands.spawn(SpriteSheetBundle {
         sprite: TextureAtlasSprite { index: 1, color, ..Default::default() },
         texture_atlas: gd.texture_atlas.clone(),
         transform: Transform::from_translation(Vec3::new(x, y, 0.0)),
@@ -333,7 +343,7 @@ fn computer_move(
                 player_color_from_state(&state)
             );
             if !is_game_over(&mut gd, &mut state, selected_column, r) {
-                state.set(GameState::HumanMove).unwrap();
+                state.replace(GameState::HumanMove).unwrap();
             }
             break;
         }
@@ -353,18 +363,18 @@ fn is_game_over(
     if gd.is_winning_move(col, row) {
         if gd.cells[row * NUM_COLUMNS + col].unwrap() == Player::Human {
             if state.current() != &GameState::HumanWon {
-                state.set(GameState::HumanWon).unwrap();
+                state.replace(GameState::HumanWon).unwrap();
                 return true;
             }
         } else {
             if state.current() != &GameState::ComputerWon {
-                state.set(GameState::ComputerWon).unwrap();
+                state.replace(GameState::ComputerWon).unwrap();
                 return true;
             }
         }
     }
     if gd.is_board_full() {
-        state.set(GameState::GameDrawn).unwrap();
+        state.replace(GameState::GameDrawn).unwrap();
         return true;
     }
     false
@@ -391,14 +401,14 @@ fn display_text(
     asset_server: Res<AssetServer>,
     s: &str,
 ) {
-    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn(Camera2dBundle::default());
 
     commands
-        .spawn_bundle(NodeBundle {
-            color: Color::rgba(0.0, 0.0, 0.0, 0.0).into(),
+        .spawn(NodeBundle {
+            background_color: Color::rgba(0.0, 0.0, 0.0, 0.0).into(),
             style: Style {
                 justify_content: JustifyContent::Center,
-                margin: Rect {
+                margin: UiRect {
                     top: Val::Px(10.0),
                     bottom: Val::Auto,
                     left: Val::Auto,
@@ -410,15 +420,14 @@ fn display_text(
             ..Default::default()
         })
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle {
-                text: Text::with_section(
+            parent.spawn(TextBundle {
+                text: Text::from_section(
                     s,
                     TextStyle {
                         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                         font_size: 80.0,
                         color: Color::rgb(0.6, 0.6, 1.0),
                     },
-                    Default::default()
                 ),
                 ..Default::default()
             });
@@ -435,8 +444,10 @@ fn main() {
     };
 
     App::new()
-        .insert_resource(wd)
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: wd,
+            ..default()
+        }))
         .add_startup_system(setup)
         .add_state(GameState::HumanMove)
         .add_system_set(SystemSet::on_update(GameState::HumanMove)

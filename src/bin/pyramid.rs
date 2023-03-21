@@ -26,7 +26,7 @@ fn setup(
     let pyramid_location = Vec3::new(0.5, -0.5, -4.);
 
     // Create a mesh for the pyramid
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(Pyramid::new(5, 1.2, 1.))),
         material: material_handle.clone(),
         transform: Transform::from_translation(pyramid_location)
@@ -35,13 +35,13 @@ fn setup(
     });
 
     // Light
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn(PointLightBundle {
         transform: Transform::from_xyz(2., 5., 2.),
         ..Default::default()
     });
 
     // Camera
-    commands.spawn_bundle(PerspectiveCameraBundle {
+    commands.spawn(Camera3dBundle {
         ..Default::default()
     });
 }
