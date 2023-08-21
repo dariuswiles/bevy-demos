@@ -1,21 +1,18 @@
 /// Create a pyramid, light source and camera, and position them such that the pyramid is lit and
 /// visible from the camera.
-
 use bevy::prelude::*;
 
 /* For the pyramid code intended to be split into a separate file. */
-use bevy::render::mesh::{Indices, Mesh};
 use bevy::math::Vec3;
+use bevy::render::mesh::{Indices, Mesh};
 // use wgpu::PrimitiveTopology;  //// This variant is used by code *within* Bevy
 use bevy::render::render_resource::PrimitiveTopology;
-
 
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-
     // Create and add a default material
     let material_handle = materials.add(StandardMaterial {
         base_color: Color::rgb(0.7, 0.6, 0.7),
@@ -53,7 +50,6 @@ fn main() {
         .run();
 }
 
-
 /* Everything below this line is intended to be in a separate file analogous to those in:
  * bevy_render/src/mesh/shape/torus.rs
  */
@@ -70,8 +66,12 @@ pub struct Pyramid {
 
 impl Pyramid {
     pub fn new(sides: u32, side_length: f32, height: f32) -> Self {
-        assert!(sides > 2, "Pyramids must have 3 or more sides");  // TODO Better way to handle this error?
-        Pyramid { sides, side_length, height }
+        assert!(sides > 2, "Pyramids must have 3 or more sides"); // TODO Better way to handle this error?
+        Pyramid {
+            sides,
+            side_length,
+            height,
+        }
     }
 }
 
@@ -92,7 +92,10 @@ impl From<Pyramid> for Mesh {
         let radius = half_width / f32::sin(angle / 2.);
         let apex = Vec3::new(0., p.height, 0.);
 
-        println!("sides = {}, side_length = {}, radius = {}", p.sides, p.side_length, radius);
+        println!(
+            "sides = {}, side_length = {}, radius = {}",
+            p.sides, p.side_length, radius
+        );
 
         // Calculate vertexes forming each face. The first vertex is located on the positive Z axis
         // and faces are created counter-clockwise (looking down the Y axis towards negative Y.
@@ -122,12 +125,12 @@ impl From<Pyramid> for Mesh {
             bottom_vertexes.push(b);
         }
 
-
         // Translate a `Vec3` position on the bottom face to u, v coordinates returned as an
         // array. `limit` is the largest absolute distance that the position can be from the
         // origin. This function therefore translates -limit..=limit to 0..=1 for both axes.
         fn xz_to_uv(pos: &Vec3, limit: f32) -> [f32; 2] {
-            [ (pos.x + limit) / (limit * 2.),
+            [
+                (pos.x + limit) / (limit * 2.),
                 (pos.z + limit) / (limit * 2.),
             ]
         }
@@ -145,13 +148,12 @@ impl From<Pyramid> for Mesh {
         for pair in bottom_vertexes.windows(2) {
             let normal = [0., -1., 0.];
 
-
             vertexes.push((vertex_nearest_pos_z.to_array(), normal, [0.5, 1.]));
             vertexes.push((pair[0].to_array(), normal, xz_to_uv(pair[0], texture_bound)));
             vertexes.push((pair[1].to_array(), normal, xz_to_uv(pair[1], texture_bound)));
         }
 
-        let num_vertexes =  6 * p.sides - 6;
+        let num_vertexes = 6 * p.sides - 6;
 
         let mut positions = Vec::with_capacity(num_vertexes as usize);
         let mut normals = Vec::with_capacity(num_vertexes as usize);

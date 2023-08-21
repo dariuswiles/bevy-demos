@@ -1,6 +1,5 @@
 /// Create a square to act as the ground and a few trees, then move the camera in response to mouse
 /// input and key presses.
-
 use bevy::input::mouse::MouseMotion;
 use bevy::math::{Quat, Vec3};
 use bevy::prelude::*;
@@ -15,7 +14,6 @@ const TIME_STEP: f32 = 1.0 / 60.0;
 const MOVE_PER_TIME_STEP: f32 = 0.15;
 
 const MOUSE_SENSITIVITY: f32 = 500.;
-
 
 #[derive(Resource)]
 struct CameraOrientation {
@@ -35,7 +33,6 @@ impl CameraOrientation {
     }
 }
 
-
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -52,14 +49,41 @@ fn setup(
         ..Default::default()
     });
 
-    create_tree(&mut commands, &mut meshes, &mut material_handle_crown, &mut material_handle_trunk,
-                1., 0.3, 2.3, 0.8, Vec3::new(0.5, 0., -8.));
+    create_tree(
+        &mut commands,
+        &mut meshes,
+        &mut material_handle_crown,
+        &mut material_handle_trunk,
+        1.,
+        0.3,
+        2.3,
+        0.8,
+        Vec3::new(0.5, 0., -8.),
+    );
 
-    create_tree(&mut commands, &mut meshes, &mut material_handle_crown, &mut material_handle_trunk,
-                1., 0.3, 2.3, 0.8, Vec3::new(-0.5, 0., -7.));
+    create_tree(
+        &mut commands,
+        &mut meshes,
+        &mut material_handle_crown,
+        &mut material_handle_trunk,
+        1.,
+        0.3,
+        2.3,
+        0.8,
+        Vec3::new(-0.5, 0., -7.),
+    );
 
-    create_tree(&mut commands, &mut meshes, &mut material_handle_crown, &mut material_handle_trunk,
-                1., 0.25, 3.5, 0.6, Vec3::new(-1.5, 0., -10.));
+    create_tree(
+        &mut commands,
+        &mut meshes,
+        &mut material_handle_crown,
+        &mut material_handle_trunk,
+        1.,
+        0.25,
+        3.5,
+        0.6,
+        Vec3::new(-1.5, 0., -10.),
+    );
 
     // Ground
     let ground_material_handle = materials.add(StandardMaterial {
@@ -73,7 +97,6 @@ fn setup(
         transform: Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
         ..Default::default()
     });
-
 
     // Point light
     commands.spawn(PointLightBundle {
@@ -111,7 +134,11 @@ fn create_tree(
 ) {
     // Create a mesh for the tree trunk
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Box::new(trunk_width, trunk_height, trunk_width))),
+        mesh: meshes.add(Mesh::from(shape::Box::new(
+            trunk_width,
+            trunk_height,
+            trunk_width,
+        ))),
         material: material_handle_trunk.clone(),
         transform: Transform::from_translation(location + Vec3::new(0., trunk_height / 2.0, 0.)),
         ..Default::default()
@@ -137,7 +164,11 @@ pub struct Pyramid {
 impl Pyramid {
     pub fn new(sides: u32, side_length: f32, height: f32) -> Self {
         assert!(sides > 2, "Pyramids must have 3 or more sides");
-        Pyramid { sides, side_length, height }
+        Pyramid {
+            sides,
+            side_length,
+            height,
+        }
     }
 }
 
@@ -186,12 +217,12 @@ impl From<Pyramid> for Mesh {
             bottom_vertexes.push(b);
         }
 
-
         // Translate a `Vec3` position on the bottom face to u, v coordinates returned as an
         // array. `limit` is the largest absolute distance that the position can be from the
         // origin. This function therefore translates -limit..=limit to 0..=1 for both axes.
         fn xz_to_uv(pos: &Vec3, limit: f32) -> [f32; 2] {
-            [ (pos.x + limit) / (limit * 2.),
+            [
+                (pos.x + limit) / (limit * 2.),
                 (pos.z + limit) / (limit * 2.),
             ]
         }
@@ -209,13 +240,12 @@ impl From<Pyramid> for Mesh {
         for pair in bottom_vertexes.windows(2) {
             let normal = [0., -1., 0.];
 
-
             vertexes.push((vertex_nearest_pos_z.to_array(), normal, [0.5, 1.]));
             vertexes.push((pair[0].to_array(), normal, xz_to_uv(pair[0], texture_bound)));
             vertexes.push((pair[1].to_array(), normal, xz_to_uv(pair[1], texture_bound)));
         }
 
-        let num_vertexes =  6 * p.sides - 6;
+        let num_vertexes = 6 * p.sides - 6;
 
         let mut positions = Vec::with_capacity(num_vertexes as usize);
         let mut normals = Vec::with_capacity(num_vertexes as usize);
@@ -235,7 +265,6 @@ impl From<Pyramid> for Mesh {
         mesh
     }
 }
-
 
 fn movement_system(
     mut primary_query: Query<&mut Window, With<PrimaryWindow>>,

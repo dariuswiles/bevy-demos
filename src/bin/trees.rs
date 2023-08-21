@@ -1,9 +1,8 @@
+use bevy::math::Vec3;
 /// Create a few trees, a light source and a camera, and position them such that the trees are lit
 /// and visible from the camera. This code contains code copied from pyramid.rs.
-
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, Mesh};
-use bevy::math::Vec3;
 use bevy::render::render_resource::PrimitiveTopology;
 
 fn setup(
@@ -22,15 +21,41 @@ fn setup(
         ..Default::default()
     });
 
-    create_tree(&mut commands, &mut meshes, &mut material_handle_crown, &mut material_handle_trunk,
-                1., 0.3, 2.3, 0.8, Vec3::new(0.5, 0., -8.));
+    create_tree(
+        &mut commands,
+        &mut meshes,
+        &mut material_handle_crown,
+        &mut material_handle_trunk,
+        1.,
+        0.3,
+        2.3,
+        0.8,
+        Vec3::new(0.5, 0., -8.),
+    );
 
-    create_tree(&mut commands, &mut meshes, &mut material_handle_crown, &mut material_handle_trunk,
-                1., 0.3, 2.3, 0.8, Vec3::new(-0.5, 0., -7.));
+    create_tree(
+        &mut commands,
+        &mut meshes,
+        &mut material_handle_crown,
+        &mut material_handle_trunk,
+        1.,
+        0.3,
+        2.3,
+        0.8,
+        Vec3::new(-0.5, 0., -7.),
+    );
 
-    create_tree(&mut commands, &mut meshes, &mut material_handle_crown, &mut material_handle_trunk,
-                1., 0.25, 3.5, 0.6, Vec3::new(-1.5, 0., -10.));
-
+    create_tree(
+        &mut commands,
+        &mut meshes,
+        &mut material_handle_crown,
+        &mut material_handle_trunk,
+        1.,
+        0.25,
+        3.5,
+        0.6,
+        Vec3::new(-1.5, 0., -10.),
+    );
 
     // Light
     commands.spawn(PointLightBundle {
@@ -44,8 +69,6 @@ fn setup(
         ..Default::default()
     });
 }
-
-
 
 /// Construct a tree with a pyramid for the crown and a shape::Box for the trunk. The height and
 /// width of each are passed as parameters. The bottom of the trunk is positioned at `location`.
@@ -64,7 +87,11 @@ fn create_tree(
 ) {
     // Create a mesh for the tree trunk
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Box::new(trunk_width, trunk_height, trunk_width))),
+        mesh: meshes.add(Mesh::from(shape::Box::new(
+            trunk_width,
+            trunk_height,
+            trunk_width,
+        ))),
         material: material_handle_trunk.clone(),
         transform: Transform::from_translation(location + Vec3::new(0., trunk_height / 2.0, 0.)),
         ..Default::default()
@@ -86,7 +113,6 @@ fn main() {
         .run();
 }
 
-
 /* Everything below this line is intended to be in a separate file analogous to those in:
  * bevy_render/src/mesh/shape/torus.rs
  */
@@ -103,7 +129,11 @@ pub struct Pyramid {
 impl Pyramid {
     pub fn new(sides: u32, side_length: f32, height: f32) -> Self {
         assert!(sides > 2, "Pyramids must have 3 or more sides");
-        Pyramid { sides, side_length, height }
+        Pyramid {
+            sides,
+            side_length,
+            height,
+        }
     }
 }
 
@@ -152,12 +182,12 @@ impl From<Pyramid> for Mesh {
             bottom_vertexes.push(b);
         }
 
-
         // Translate a `Vec3` position on the bottom face to u, v coordinates returned as an
         // array. `limit` is the largest absolute distance that the position can be from the
         // origin. This function therefore translates -limit..=limit to 0..=1 for both axes.
         fn xz_to_uv(pos: &Vec3, limit: f32) -> [f32; 2] {
-            [ (pos.x + limit) / (limit * 2.),
+            [
+                (pos.x + limit) / (limit * 2.),
                 (pos.z + limit) / (limit * 2.),
             ]
         }
@@ -175,13 +205,12 @@ impl From<Pyramid> for Mesh {
         for pair in bottom_vertexes.windows(2) {
             let normal = [0., -1., 0.];
 
-
             vertexes.push((vertex_nearest_pos_z.to_array(), normal, [0.5, 1.]));
             vertexes.push((pair[0].to_array(), normal, xz_to_uv(pair[0], texture_bound)));
             vertexes.push((pair[1].to_array(), normal, xz_to_uv(pair[1], texture_bound)));
         }
 
-        let num_vertexes =  6 * p.sides - 6;
+        let num_vertexes = 6 * p.sides - 6;
 
         let mut positions = Vec::with_capacity(num_vertexes as usize);
         let mut normals = Vec::with_capacity(num_vertexes as usize);

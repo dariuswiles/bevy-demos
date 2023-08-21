@@ -1,6 +1,5 @@
 /// Create several rotating cubes, a light source, and a camera. The rotation is controlled by
 /// adding the `RotatingEntity` component to the entities to be rotated.
-
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -48,13 +47,11 @@ fn setup(
     });
 }
 
-
 fn rotate_entities(time: Res<Time>, mut query: Query<&mut Transform, With<RotatingEntity>>) {
     for mut transform in query.iter_mut() {
         transform.rotation = Quat::from_rotation_y(time.elapsed_seconds() as f32 / 2.0);
     }
 }
-
 
 fn main() {
     App::new()

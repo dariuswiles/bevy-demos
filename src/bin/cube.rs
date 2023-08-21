@@ -1,6 +1,5 @@
 /// Create a cube, a light source, and a camera, and position them such that the lit cube is
 /// visible from the camera.
-
 use bevy::prelude::*;
 
 fn setup(
@@ -33,8 +32,7 @@ fn setup(
 
     // Camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(1.0, 2.0, 0.0)
-            .looking_at(cube_location, Vec3::Y),
+        transform: Transform::from_xyz(1.0, 2.0, 0.0).looking_at(cube_location, Vec3::Y),
         ..Default::default()
     });
 }
