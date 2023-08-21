@@ -6,8 +6,7 @@ use bevy::math::{Quat, Vec3};
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, Mesh};
 use bevy::render::render_resource::PrimitiveTopology;
-use bevy::time::FixedTimestep;
-use bevy::window::CursorGrabMode;
+use bevy::window::{CursorGrabMode, PrimaryWindow};
 
 // Time between each physics step.
 const TIME_STEP: f32 = 1.0 / 60.0;
@@ -42,7 +41,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-
     // Create and add a default material
     let mut material_handle_crown = materials.add(StandardMaterial {
         base_color: Color::rgb(0.3, 0.8, 0.3),
@@ -75,7 +73,6 @@ fn setup(
         transform: Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::PI / 2.)),
         ..Default::default()
     });
-
 
 
     // Point light
@@ -241,7 +238,7 @@ impl From<Pyramid> for Mesh {
 
 
 fn movement_system(
-    mut windows: ResMut<Windows>,
+    mut primary_query: Query<&mut Window, With<PrimaryWindow>>,
     mut motion_evr: EventReader<MouseMotion>,
     mut camera_orientation: ResMut<CameraOrientation>,
     btn: Res<Input<MouseButton>>,
@@ -249,19 +246,22 @@ fn movement_system(
     mut query: Query<(&Camera, &mut Transform)>,
 ) {
     let (_camera, mut transform) = query.single_mut();
-    let window = windows.get_primary_mut().unwrap();
+
+    let mut window = primary_query
+        .get_single_mut()
+        .expect("Internal error: cannot locate primary window");
 
     if btn.just_pressed(MouseButton::Left) {
-        window.set_cursor_grab_mode(CursorGrabMode::Confined);
-        window.set_cursor_visibility(false);
+        window.cursor.grab_mode = CursorGrabMode::Confined;
+        window.cursor.visible = false;
     }
 
     if key.just_pressed(KeyCode::Escape) {
-        window.set_cursor_grab_mode(CursorGrabMode::None);
-        window.set_cursor_visibility(true);
+        window.cursor.grab_mode = CursorGrabMode::None;
+        window.cursor.visible = true;
     }
 
-    if window.cursor_visible() {
+    if window.cursor.visible {
         return;
     }
 
@@ -307,12 +307,9 @@ fn movement_system(
 fn main() {
     App::new()
         .insert_resource(CameraOrientation::default())
+        .insert_resource(FixedTime::new_from_secs(TIME_STEP))
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
-        .add_system_set(
-            SystemSet::new()
-                .with_system(movement_system)
-                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
-        )
+        .add_system(movement_system)
         .run();
 }
