@@ -58,7 +58,7 @@ fn rotate_entities(time: Res<Time>, mut query: Query<&mut Transform, With<Rotati
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup)
-        .add_system(rotate_entities)
+        .add_systems(Startup, setup)
+        .add_systems(Update, rotate_entities)
         .run();
 }

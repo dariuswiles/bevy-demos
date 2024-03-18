@@ -8,7 +8,7 @@ use bevy::render::render_resource::PrimitiveTopology;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 
 // Time between each physics step.
-const TIME_STEP: f32 = 1.0 / 60.0;
+const TIME_STEP: f64 = 1.0 / 60.0;
 
 // Player movement is per TIME_STEP, so must be changed if TIME_STEP is changed.
 const MOVE_PER_TIME_STEP: f32 = 0.15;
@@ -308,7 +308,7 @@ fn movement_system(
         movement.z -= 1.;
     }
 
-    if key.pressed(KeyCode::LShift) {
+    if key.pressed(KeyCode::ShiftLeft) {
         movement.y += 1.;
     }
 
@@ -325,7 +325,7 @@ fn movement_system(
     transform.translation.z += adjusted_movement.z * MOVE_PER_TIME_STEP;
     transform.translation.y += adjusted_movement.y * MOVE_PER_TIME_STEP;
 
-    for event in motion_evr.iter() {
+    for event in motion_evr.read() {
         camera_orientation.x -= event.delta.x / MOUSE_SENSITIVITY;
         camera_orientation.y -= event.delta.y / MOUSE_SENSITIVITY;
     }
@@ -336,9 +336,9 @@ fn movement_system(
 fn main() {
     App::new()
         .insert_resource(CameraOrientation::default())
-        .insert_resource(FixedTime::new_from_secs(TIME_STEP))
+        .insert_resource(Time::<Fixed>::from_seconds(TIME_STEP))
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup)
-        .add_system(movement_system)
+        .add_systems(Startup, setup)
+        .add_systems(Update, movement_system)
         .run();
 }

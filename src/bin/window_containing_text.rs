@@ -26,7 +26,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin { ..default() }))
-        .add_startup_system(setup)
-        .add_system(empty_system)
+        .add_systems(Startup, setup)
+        .add_systems(Update, empty_system)
         .run();
 }
